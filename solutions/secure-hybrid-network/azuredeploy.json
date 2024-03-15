@@ -1,0 +1,170 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "OnPremResourceGroup": {
+            "type": "string",
+            "defaultValue": "site-to-site-onon-prem"
+        },
+        "azureNetworkResourceGroup": {
+            "type": "string",
+            "defaultValue": "site-to-site-azure-network"
+        },
+        "adminUserName": {
+            "type": "string",
+            "metadata": {
+                "description": "The admin user name for both the Windows and Linux virtual machines."
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The admin password for both the Windows and Linux virtual machines."
+            }
+        },
+        "resourceGrouplocation": {
+            "type": "string",
+            "defaultValue": "uksouth"
+        }
+    },
+    "variables": {
+        "OnPremTemplate": "[uri(deployment().properties.templateLink.uri, 'nestedtemplates/-onprem-azuredeploy.json')]",
+        "azureVirtualNetworkTemplate": "[uri(deployment().properties.templateLink.uri, 'nestedtemplates/azure-network-azuredeploy.json')]",
+        "OnPremLocalGatewayTemplate": "[uri(deployment().properties.templateLink.uri, 'nestedtemplates/-onprem-local-gateway.json')]",
+        "azureVirtualNetworkLocalGatewayTemplate": "[uri(deployment().properties.templateLink.uri, 'nestedtemplates/azure-network-local-gateway.json')]"
+
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2019-10-01",
+            "name": "[parameters('OnPremResourceGroup')]",
+            "location": "[parameters('resourceGrouplocation')]"
+        },
+        {
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2019-10-01",
+            "name": "[parameters('azureNetworkResourceGroup')]",
+            "location": "[parameters('resourceGrouplocation')]"
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2020-06-01",
+            "name": "onPrem",
+            "resourceGroup": "[parameters('OnPremResourceGroup')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/resourceGroups', parameters('OnPremResourceGroup'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('OnPremTemplate')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "location": {
+                        "value": "[parameters('resourceGrouplocation')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2020-06-01",
+            "name": "azureNetwork",
+            "resourceGroup": "[parameters('azureNetworkResourceGroup')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/resourceGroups', parameters('azureNetworkResourceGroup'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('azureVirtualNetworkTemplate')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "location": {
+                        "value": "[parameters('resourceGrouplocation')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2020-06-01",
+            "name": "OnPremLocalGateway",
+            "resourceGroup": "[parameters('OnPremResourceGroup')]",
+            "dependsOn": [
+                "azureNetwork",
+                "onPrem"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('OnPremLocalGatewayTemplate')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "gatewayIpAddress": {
+                        "value": "[reference('azureNetwork').outputs.vpnIp.value]"
+                    },
+                    "azureCloudVnetPrefix": {
+                        "value": "[reference('azureNetwork').outputs.OnpremNetwork.value]"
+                    },
+                    "spokeNetworkAddressPrefix": {
+                        "value": "[reference('azureNetwork').outputs.spokeNetworkAddressPrefix.value]"
+                    },
+                    "OnpremGatewayName": {
+                        "value": "[reference('onPrem').outputs.OnpremGatewayName.value]"
+                    },
+                    "location": {
+                        "value": "[parameters('resourceGrouplocation')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2020-06-01",
+            "name": "azureNetworkLocalGateway",
+            "resourceGroup": "[parameters('azureNetworkResourceGroup')]",
+            "dependsOn": [
+                "azureNetwork",
+                "onPrem"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('azureVirtualNetworkLocalGatewayTemplate')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "azureCloudVnetPrefix": {
+                        "value": "[reference('onPrem').outputs.OnpremNetworkPrefix.value]"
+                    },
+                    "gatewayIpAddress": {
+                        "value": "[reference('onPrem').outputs.vpnIp.value]"
+                    },
+                    "azureNetworkGatewayName": {
+                        "value": "[reference('azureNetwork').outputs.azureGatewayName.value]"
+                    },
+                    "location": {
+                        "value": "[parameters('resourceGrouplocation')]"
+                    }
+                }
+            }
+        }
+    ]
+}
