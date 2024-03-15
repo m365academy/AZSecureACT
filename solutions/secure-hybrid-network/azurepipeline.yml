@@ -12,9 +12,9 @@ variables:
   - name: ttk-skip-test
     value: "DependsOn-Best-Practices,IDs-Should-Be-Derived-From-ResourceIDs,Secure-Params-In-Nested-Deployments"
   - name: artifactsLocationTemplate
-    value: "https://raw.githubusercontent.com/mspnp/samples/main/solutions/secure-hybrid-network/"
-  - name: -onon-prem-resource-group-name
-    value: secure--onprem-$(Build.BuildId)
+    value: "https://raw.githubusercontent.com/m365academy/AZSecureACT/main/solutions/secure-hybrid-network/"
+  - name: on-prem-resource-group-name
+    value: secure-onprem-$(Build.BuildId)
   - name: azure-network-resource-group-name
     value: secure-vnet-azure-$(Build.BuildId)
 
