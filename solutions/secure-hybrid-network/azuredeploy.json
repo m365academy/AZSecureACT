@@ -28,7 +28,7 @@
         }
     },
     "variables": {
-        "OnPremTemplate": "[uri(deployment().properties.templateLink.uri, 'nestedtemplates/-onprem-azuredeploy.json')]",
+        "OnPremTemplate": "[uri(deployment().properties.templateLink.uri, 'nestedtemplates/onprem-azuredeploy.json')]",
         "azureVirtualNetworkTemplate": "[uri(deployment().properties.templateLink.uri, 'nestedtemplates/azure-network-azuredeploy.json')]",
         "OnPremLocalGatewayTemplate": "[uri(deployment().properties.templateLink.uri, 'nestedtemplates/-onprem-local-gateway.json')]",
         "azureVirtualNetworkLocalGatewayTemplate": "[uri(deployment().properties.templateLink.uri, 'nestedtemplates/azure-network-local-gateway.json')]"

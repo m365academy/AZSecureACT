@@ -73,7 +73,7 @@ az deployment sub create -location eastus -template-file azuredeploy.bicep
 | azureNetworkGatewayName | string | Name of the Azure virtual network gateway. | null |
 | localNetworkGatewayName | string |  Name of the Azure local network gateway. | local-gateway-azure-network |
 
-**nestedtemplates/-onprem-azuredeploy.json**
+**nestedtemplates/onprem-azuredeploy.json**
 
 | Parameter | Type | Description | Default |
 |--|--|--|-|
